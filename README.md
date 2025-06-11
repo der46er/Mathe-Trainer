@@ -41,13 +41,3 @@ Richtige Antworten: Der Rahmen leuchtet kurz grün auf.
 Falsche Antworten: Der Rahmen leuchtet rot auf und wird leicht geschüttelt, um auf den Fehler aufmerksam zu machen.
 
 
-Technologie
-Die Anwendung ist vollständig mit den Kerntechnologien des Webs erstellt:
-
-HTML: Für die grundlegende Struktur der Seite.
-
-CSS: Für das moderne Design, die Farbverläufe, Animationen und das responsive Layout.
-
-JavaScript: Für die gesamte Logik, einschließlich der Aufgabengenerierung, der Einstellungsverwaltung und der Interaktivität.
-
-Dieses Projekt kombiniert spielerisches Lernen mit modernen Web-Technologien, um eine nützliche und ansprechende Lernanwendung zu schaffen.
