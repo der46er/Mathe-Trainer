@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mathe-Trainer</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&display=swap');
+
+        :root {
+            --primary: #ef476f;
+            --secondary: #ffd166;
+            --light: #fff;
+            --dark: #073b4c;
+            --success: #06d6a0;
+            --info: #118ab2;
+        }
+
+        body {
+            font-family: 'Nunito', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            color: var(--light);
+            background: linear-gradient(270deg, #667eea, #764ba2, var(--primary), var(--success));
+            background-size: 400% 400%;
+            animation: animateGradient 20s ease infinite;
+            overflow: hidden;
+        }
+
+        @keyframes animateGradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        /* Animationen für Feedback */
+        @keyframes shake {
+          10%, 90% { transform: translate3d(-1px, 0, 0); }
+          20%, 80% { transform: translate3d(2px, 0, 0); }
+          30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+          40%, 60% { transform: translate3d(4px, 0, 0); }
+        }
+
+        @keyframes flash-green {
+          0% { box-shadow: 0 0 15px rgba(6, 214, 160, 0); }
+          50% { box-shadow: 0 0 25px 15px rgba(6, 214, 160, 0.7); }
+          100% { box-shadow: 0 0 15px rgba(6, 214, 160, 0); }
+        }
+
+        @keyframes flash-red {
+          0% { box-shadow: 0 0 15px rgba(239, 71, 111, 0); }
+          50% { box-shadow: 0 0 25px 15px rgba(239, 71, 111, 0.7); }
+          100% { box-shadow: 0 0 15px rgba(239, 71, 111, 0); }
+        }
+
+        .main-wrapper {
+            position: relative;
+        }
+
+        .container {
+            width: 95vw;
+            max-width: 550px;
+            min-height: 450px;
+            padding: 20px;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            text-align: center;
+            position: relative;
+            transition: transform 0.2s;
+        }
+
+        /* Klassen für Feedback-Animationen */
+        .container.correct {
+            animation: flash-green 0.7s ease;
+        }
+        .container.incorrect {
+            animation: shake 0.82s cubic-bezier(.36,.07,.19,.97) both;
+        }
+
+        .screen { display: none; }
+        .screen.active { display: flex; flex-direction: column; justify-content: center; height: 100%; min-height: 450px; }
+        
+        h1, h2, h3 { font-weight: 900; }
+        h1 { font-size: 2.5em; margin-bottom: 10px; }
+        h2 { font-size: 1.8em; }
+        h3 { font-size: 1.4em; margin-bottom: 10px; margin-top: 20px; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 5px; }
+        p { font-size: 1.2em; margin-bottom: 40px; }
+        
+        .menu-grid { display: grid; gap: 15px; grid-template-columns: 1fr 1fr; }
+        .table-grid, .mcq-grid { display: grid; gap: 15px; }
+        .table-grid { grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); }
+        .mcq-grid { grid-template-columns: repeat(2, 1fr); }
+
+        .btn, .table-btn, .mcq-btn { padding: 20px 10px; font-size: 1.2em; font-weight: 700; cursor: pointer; border: none; border-radius: 15px; color: var(--light); transition: transform 0.2s, box-shadow 0.2s, background-color 0.2s; background: rgba(255, 255, 255, 0.2); text-shadow: 1px 1px 2px rgba(0,0,0,0.2); }
+        .mcq-btn { background-color: var(--info); }
+        
+        .btn:hover, .table-btn:hover, .mcq-btn:hover { transform: translateY(-5px) scale(1.05); box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3); }
+        
+        .menu-grid .btn { height: 80px; display: flex; justify-content: center; align-items: center; font-size: 1.4em; }
+        .btn-addition { background-color: var(--secondary); }
+        .btn-subtraction { background-color: var(--info); }
+        .btn-multiplication { background-color: var(--primary); }
+        .btn-division { background-color: var(--success); }
+        .btn-danger { background-color: var(--primary); }
+
+        .table-btn.mixed { background-image: linear-gradient(to right, #f78c6b, var(--primary), var(--info)); }
+
+        #problem { font-size: clamp(2.5em, 8vw, 4em); font-weight: 700; margin: 20px 0; text-shadow: 2px 2px 4px rgba(0,0,0,0.2); }
+
+        #answer-input-container { margin-bottom: 20px; }
+        #answer { padding: 15px; font-size: 1.8em; width: 150px; text-align: center; border-radius: 10px; border: 2px solid rgba(255, 255, 255, 0.5); background: rgba(255, 255, 255, 0.2); color: var(--light); font-family: 'Nunito', sans-serif; }
+        #answer::placeholder { color: rgba(255,255,255,0.6); }
+
+        .back-btn, .settings-btn, .leaderboard-toggle-btn { position: absolute; top: 20px; background: none; border: none; color: var(--light); font-size: 2.2em; cursor: pointer; font-weight: 700; line-height: 1; z-index: 10; padding: 5px; }
+        .back-btn { left: 10px; }
+        .leaderboard-toggle-btn { left: 10px; }
+        #practice-screen .leaderboard-toggle-btn { left: 60px; }
+        .settings-btn { right: 10px; font-size: 2em; }
+
+        #feedback, #login-feedback { font-size: 1.2em; margin-top: 20px; min-height: 25px; font-weight: 700; }
+        #login-feedback { color: var(--primary); }
+
+        /* Modals */
+        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(5px); z-index: 100; display: none; justify-content: center; align-items: center; }
+        .modal-content { background: #3c3c5a; padding: 25px; border-radius: 15px; width: 90%; max-width: 400px; text-align: center; position: relative; }
+        .modal-content h2 { margin-top: 0; }
+        .setting-row, .login-row { margin-bottom: 20px; text-align: left; }
+        .setting-row { display: flex; justify-content: space-between; align-items: center; }
+        .setting-row label, .login-row label { font-size: 1.1em; display: block; margin-bottom: 5px; }
+        .setting-row .slider-container { flex-grow: 1; margin: 0 15px; }
+        .setting-row .slider-value { min-width: 40px; text-align: right; }
+        #name-input, .login-input { width: calc(100% - 20px); padding: 10px; font-size: 1.2em; border-radius: 10px; border: none; }
+        .btn-save { background-color: var(--success); }
+        .modal-close-btn { position: absolute; top: 10px; right: 15px; background: none; border: none; color: var(--light); font-size: 1.5em; cursor: pointer;}
+        .danger-zone { display: flex; flex-direction: column; gap: 10px; }
+        
+        #timer-bar-container { width: 80%; height: 10px; background: rgba(0,0,0,0.2); border-radius: 5px; margin: 10px auto; overflow: hidden; display: none; }
+        #timer-bar { width: 100%; height: 100%; background: linear-gradient(to right, var(--success), var(--secondary), var(--primary)); transition: width 0.1s linear; }
+        
+        #question-counter { font-size: 1.2em; font-weight: 700; margin-top: 20px; }
+
+        /* Leaderboard */
+        #leaderboard-panel { position: fixed; left: -100%; top: 0; width: 90%; max-width: 400px; height: 100%; background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(10px); z-index: 200; transition: left 0.5s ease; padding: 20px; box-shadow: 5px 0 15px rgba(0,0,0,0.3); display: flex; flex-direction: column; }
+        #leaderboard-panel.show { left: 0; }
+        #leaderboard-panel h2 { text-align: center; flex-shrink: 0; }
+        .leaderboard-nav { display: flex; justify-content: space-around; margin-bottom: 10px; flex-shrink: 0; flex-wrap: wrap; }
+        .leaderboard-nav button { background: none; border: 1px solid var(--light); color: var(--light); padding: 5px 10px; border-radius: 5px; cursor: pointer; margin: 5px; }
+        .leaderboard-nav button.active { background: var(--light); color: var(--dark); }
+        #leaderboard_multi_nav { flex-wrap: wrap; justify-content: center; }
+        #leaderboard-list-container { flex-grow: 1; overflow-y: auto; }
+        #leaderboard-list { list-style: none; padding: 0; }
+        #leaderboard-list li { display: flex; justify-content: space-between; align-items: center; padding: 10px; background: rgba(255,255,255,0.1); border-radius: 5px; margin-bottom: 5px; }
+        #leaderboard-list li .score-details { display: flex; align-items: center; }
+        #leaderboard-list li .delete-btn { background: none; border: none; color: var(--primary); cursor: pointer; font-size: 1.4em; padding: 0 5px; margin-left: 10px; transition: color 0.2s; }
+        #leaderboard-list li .delete-btn:hover { color: var(--light); }
+    </style>
+</head>
+<body>
+<div class="main-wrapper">
+    <div id="leaderboard-panel">
+        <h2>Bestenliste</h2>
+        <div class="leaderboard-nav">
+            <button onclick="displayLeaderboard('addition')">Addition</button>
+            <button onclick="displayLeaderboard('subtraction')">Subtraktion</button>
+            <button id="leaderboard-multi-btn">Multiplikation</button>
+            <button onclick="displayLeaderboard('division')">Division</button>
+        </div>
+        <div id="leaderboard_multi_nav" class="leaderboard-nav" style="display: none;"></div>
+        <div id="leaderboard-list-container">
+            <ol id="leaderboard-list"></ol>
+        </div>
+    </div>
+
+    <div class="container">
+        <div id="main-menu" class="screen active">
+            <div>
+                <button class="leaderboard-toggle-btn" title="Bestenliste">&#127942;</button>
+                <button id="dev-settings-btn" class="settings-btn" title="Entwickler-Einstellungen">&#128274;</button>
+                <h1>Mathe-Trainer</h1>
+                <p>Wähle eine Rechenart zum Üben.</p>
+                <div class="menu-grid">
+                    <button class="btn btn-addition" onclick="startPractice('addition')">➕ Addition</button>
+                    <button class="btn btn-subtraction" onclick="startPractice('subtraction')">➖ Subtraktion</button>
+                    <button class="btn btn-multiplication" onclick="showScreen('multiplication-menu')">✖️ Multiplikation</button>
+                    <button class="btn btn-division" onclick="startPractice('division')">➗ Division</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="multiplication-menu" class="screen">
+             <div>
+                <button class="back-btn" title="Zurück" onclick="showScreen('main-menu')">&larr;</button>
+                <h1>Malreihen</h1><p>Welche Malreihe möchtest du üben?</p>
+                <div class="table-grid"></div>
+            </div>
+        </div>
+        
+        <div id="practice-screen" class="screen">
+            <div>
+                <button id="practice-back-btn" class="back-btn" title="Zurück">&larr;</button>
+                <button class="leaderboard-toggle-btn" title="Bestenliste">&#127942;</button>
+                <button id="settings-btn" class="settings-btn" title="Einstellungen">&#9881;</button>
+                
+                <div id="question-counter"></div>
+                <div id="timer-bar-container"><div id="timer-bar"></div></div>
+                <div id="problem"></div>
+                <div id="answer-input-container">
+                    <input type="number" id="answer" placeholder="?" autofocus>
+                    <br><br>
+                    <button id="check-btn" class="btn">Prüfen</button>
+                </div>
+                <div id="mcq-options-container" class="mcq-grid"></div>
+                <div id="feedback"></div>
+            </div>
+        </div>
+
+        <div id="settings-modal" class="modal-overlay">
+            <div class="modal-content">
+                <button class="modal-close-btn" onclick="this.parentElement.parentElement.style.display='none'">&times;</button>
+                <h2>Einstellungen</h2>
+                <div class="setting-row"><label>Zeitlimit</label><input type="checkbox" id="timer-toggle"></div>
+                <div class="setting-row" id="time-slider-container"><label>Dauer</label><div class="slider-container"><input type="range" id="time-slider" min="3" max="30"></div><span id="time-value" class="slider-value"></span></div>
+                <hr><p>Antwortmodus:</p>
+                <div class="setting-row"><label for="mode-type">Eintippen</label><input type="radio" id="mode-type" name="answer-mode" value="type"></div>
+                <div class="setting-row"><label for="mode-mcq">4 Optionen</label><input type="radio" id="mode-mcq" name="answer-mode" value="mcq"></div>
+                <button id="save-settings-btn" class="btn btn-save">💾 Speichern</button>
+            </div>
+        </div>
+        
+        <div id="login-modal" class="modal-overlay">
+            <div class="modal-content">
+                 <button class="modal-close-btn" onclick="this.parentElement.parentElement.style.display='none'">&times;</button>
+                <h2>Entwickler-Login</h2>
+                <div class="login-row">
+                    <label for="dev-username">Benutzername</label>
+                    <input type="text" id="dev-username" class="login-input">
+                </div>
+                 <div class="login-row">
+                    <label for="dev-password">Passwort</label>
+                    <input type="password" id="dev-password" class="login-input">
+                </div>
+                <div id="login-feedback"></div>
+                <button id="login-btn" class="btn">Login</button>
+            </div>
+        </div>
+
+        <div id="developer-settings-modal" class="modal-overlay">
+            <div class="modal-content">
+                 <button class="modal-close-btn" onclick="this.parentElement.parentElement.style.display='none'">&times;</button>
+                <h2>Entwickler-Einstellungen</h2>
+                <h3>Allgemein</h3>
+                <div class="setting-row"><label>Aufgaben für Bestenliste</label><div class="slider-container"><input type="range" id="questions-slider" min="25" max="200" step="25"></div><span id="questions-value" class="slider-value"></span></div>
+                <h3>Testing-Tools</h3>
+                 <div class="setting-row">
+                    <label for="god-mode-toggle">Gott-Modus (Immer richtig)</label>
+                    <input type="checkbox" id="god-mode-toggle">
+                </div>
+                <h3>Gefahrenzone</h3>
+                <div class="danger-zone">
+                    <button id="reset-leaderboards-btn" class="btn btn-danger">Alle Bestenlisten zurücksetzen</button>
+                    <button id="reset-settings-btn" class="btn btn-danger">Benutzereinstellungen zurücksetzen</button>
+                </div>
+                <button onclick="document.getElementById('developer-settings-modal').style.display='none'" class="btn" style="margin-top:20px;">Schließen</button>
+            </div>
+        </div>
+
+        <div id="name-modal" class="modal-overlay">
+            <div class="modal-content">
+                <h2 id="name-modal-title">Super! 100 gelöst!</h2>
+                <p>Gib deinen Namen für die Bestenliste ein.</p>
+                <input type="text" id="name-input" placeholder="Dein Name">
+                <button id="save-score-btn" class="btn btn-save">Speichern</button>
+            </div>
+        </div>
+    </div>
+</div>
+    <script>
+        // DOM Elements
+        const allScreens = document.querySelectorAll('.screen');
+        const container = document.querySelector('.container');
+        const tableGrid = document.querySelector('.table-grid');
+        const problemEl = document.getElementById('problem');
+        const feedbackEl = document.getElementById('feedback');
+        const checkBtn = document.getElementById('check-btn');
+        const practiceBackBtn = document.getElementById('practice-back-btn');
+        const settingsBtn = document.getElementById('settings-btn');
+        const devSettingsBtn = document.getElementById('dev-settings-btn');
+        const settingsModal = document.getElementById('settings-modal');
+        const loginModal = document.getElementById('login-modal');
+        const devSettingsModal = document.getElementById('developer-settings-modal');
+        const nameModal = document.getElementById('name-modal');
+        const answerInputContainer = document.getElementById('answer-input-container');
+        const mcqContainer = document.getElementById('mcq-options-container');
+        const answerEl = document.getElementById('answer');
+        const questionCounterEl = document.getElementById('question-counter');
+        const leaderboardPanel = document.getElementById('leaderboard-panel');
+        const leaderboardList = document.getElementById('leaderboard-list');
+        const leaderboardMultiNav = document.getElementById('leaderboard_multi_nav');
+        
+        // Settings Elements
+        const timerToggle = document.getElementById('timer-toggle');
+        const timeSlider = document.getElementById('time-slider');
+        const timeValueDisplay = document.getElementById('time-value');
+        const timeSliderContainer = document.getElementById('time-slider-container');
+        const timerBarContainer = document.getElementById('timer-bar-container');
+        const timerBar = document.getElementById('timer-bar');
+        const saveSettingsBtn = document.getElementById('save-settings-btn');
+        const saveScoreBtn = document.getElementById('save-score-btn');
+        const nameInput = document.getElementById('name-input');
+        const nameModalTitle = document.getElementById('name-modal-title');
+        const loginBtn = document.getElementById('login-btn');
+        const devUsernameInput = document.getElementById('dev-username');
+        const devPasswordInput = document.getElementById('dev-password');
+        const loginFeedback = document.getElementById('login-feedback');
+        
+        // Dev Settings Elements
+        const questionsSlider = document.getElementById('questions-slider');
+        const questionsValue = document.getElementById('questions-value');
+        const godModeToggle = document.getElementById('god-mode-toggle');
+        const resetLeaderboardsBtn = document.getElementById('reset-leaderboards-btn');
+        const resetSettingsBtn = document.getElementById('reset-settings-btn');
+
+        // State
+        let number1, number2, correctAnswer, questionCounter, sessionStartTime, totalTime;
+        let operationMode = null;
+        let selectedTable = null;
+        let timerInterval;
+        let isGodModeActive = false;
+        let devSettings = { questionsToSolve: 100 };
+        let settings = { timerActive: false, timeLimit: 10, answerMode: 'type' };
+
+        // --- Navigation & Setup ---
+        function showScreen(screenId) {
+            allScreens.forEach(screen => screen.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+        }
+
+        function createTableButtons() {
+            if (tableGrid.childElementCount > 0) return; 
+            for (let i = 1; i <= 10; i++) {
+                const btn = document.createElement('button');
+                btn.classList.add('table-btn');
+                btn.innerText = `${i}er-Reihe`;
+                btn.onclick = () => startPractice('multiplication', i);
+                tableGrid.appendChild(btn);
+            }
+            const mixedBtn = document.createElement('button');
+            mixedBtn.classList.add('table-btn', 'mixed');
+            mixedBtn.innerText = 'Gemischt';
+            mixedBtn.onclick = () => startPractice('multiplication', 'mixed');
+            tableGrid.appendChild(mixedBtn);
+        }
+
+        function startPractice(mode, table = null) {
+            operationMode = mode;
+            selectedTable = table;
+            questionCounter = 0;
+            sessionStartTime = new Date().getTime();
+            settingsBtn.style.display = 'block';
+            
+            practiceBackBtn.onclick = () => {
+                if(operationMode === 'multiplication') showScreen('multiplication-menu');
+                else showScreen('main-menu');
+                stopTimer();
+            };
+            
+            showScreen('practice-screen');
+            newProblem();
+        }
+
+        // --- Problem Logic ---
+        function newProblem() {
+            clearFeedback();
+            answerEl.value = '';
+            questionCounterEl.innerText = `${questionCounter} / ${devSettings.questionsToSolve}`;
+            
+            if (questionCounter >= devSettings.questionsToSolve) {
+                finishSession();
+                return;
+            }
+
+            switch(operationMode) {
+                case 'addition':
+                    number1 = Math.floor(Math.random() * 100) + 1;
+                    number2 = Math.floor(Math.random() * 100) + 1;
+                    correctAnswer = number1 + number2;
+                    problemEl.innerText = `${number1} + ${number2}`;
+                    break;
+                case 'subtraction':
+                    number1 = Math.floor(Math.random() * 100) + 1;
+                    number2 = Math.floor(Math.random() * number1) + 1;
+                    correctAnswer = number1 - number2;
+                    problemEl.innerText = `${number1} - ${number2}`;
+                    break;
+                case 'multiplication':
+                    number1 = (selectedTable === 'mixed') ? Math.floor(Math.random() * 10) + 1 : selectedTable;
+                    number2 = Math.floor(Math.random() * 10) + 1;
+                    correctAnswer = number1 * number2;
+                    problemEl.innerText = `${number1} × ${number2}`;
+                    break;
+                case 'division':
+                    const divisor = Math.floor(Math.random() * 9) + 2;
+                    const result = Math.floor(Math.random() * 9) + 2;
+                    correctAnswer = result;
+                    number1 = divisor * result;
+                    problemEl.innerText = `${number1} ÷ ${divisor}`;
+                    break;
+            }
+            
+            updateUIVisibility();
+            if (settings.answerMode === 'mcq') {
+                generateMcqOptions();
+            }
+            
+            startTimer();
+            answerEl.focus();
+        }
+        
+        function generateMcqOptions() {
+            mcqContainer.innerHTML = '';
+            const options = new Set([correctAnswer]);
+            const offsets = [1, -1, 10, -10, 2, -2];
+            for (const offset of offsets.sort(() => Math.random() - 0.5)) {
+                if (options.size >= 4) break;
+                const distractor = correctAnswer + offset;
+                if (distractor >= 0) options.add(distractor);
+            }
+            while (options.size < 4) {
+                const randomOffset = Math.floor(Math.random() * 20) - 10;
+                if (randomOffset === 0) continue;
+                const distractor = correctAnswer + randomOffset;
+                if (distractor >= 0 && !options.has(distractor)) options.add(distractor);
+            }
+            const shuffledOptions = Array.from(options).sort(() => Math.random() - 0.5);
+
+            shuffledOptions.forEach(option => {
+                const btn = document.createElement('button');
+                btn.classList.add('mcq-btn');
+                btn.innerText = option;
+                btn.onclick = () => checkAnswer(option);
+                mcqContainer.appendChild(btn);
+            });
+        }
+
+        // --- Answer Checking ---
+        function checkAnswer(userAnswer) {
+            stopTimer();
+            container.classList.remove('correct', 'incorrect');
+            const answer = (userAnswer !== undefined) ? userAnswer : parseInt(answerEl.value);
+            
+            if (isGodModeActive) {
+                feedbackEl.innerText = "Gott-Modus Aktiv!";
+                feedbackEl.style.color = 'var(--secondary)';
+                container.classList.add('correct');
+                questionCounter++;
+                setTimeout(() => {
+                    container.classList.remove('correct');
+                    newProblem();
+                }, 500);
+                return;
+            }
+
+            if (isNaN(answer)) return;
+
+            if (answer === correctAnswer) {
+                feedbackEl.innerText = "Richtig! Super!";
+                feedbackEl.style.color = 'var(--success)';
+                container.classList.add('correct');
+                questionCounter++;
+                setTimeout(() => {
+                    container.classList.remove('correct');
+                    newProblem();
+                }, 1000);
+            } else {
+                feedbackEl.innerText = `Falsch. Richtig ist: ${correctAnswer}`;
+                feedbackEl.style.color = 'var(--primary)';
+                container.classList.add('incorrect');
+                setTimeout(() => {
+                    container.classList.remove('incorrect');
+                    newProblem();
+                }, 2000);
+            }
+        }
+        
+        function clearFeedback() { feedbackEl.innerText = ''; }
+
+        // --- Session Finish & Leaderboard ---
+        function finishSession() {
+            totalTime = (new Date().getTime() - sessionStartTime) / 1000;
+            nameModalTitle.innerText = `Super! ${devSettings.questionsToSolve} gelöst!`;
+            nameModal.style.display = 'flex';
+        }
+
+        function saveScore() {
+            const name = nameInput.value.trim() || 'Anonym';
+            const score = { name, time: totalTime }; // Store raw seconds
+            
+            let storageKey = operationMode;
+            if (operationMode === 'multiplication') {
+                storageKey = `multiplication-${selectedTable}`;
+            }
+
+            const leaderboard = JSON.parse(localStorage.getItem(storageKey) || '[]');
+            leaderboard.push(score);
+            leaderboard.sort((a, b) => a.time - b.time);
+            
+            localStorage.setItem(storageKey, JSON.stringify(leaderboard.slice(0, 10)));
+            
+            nameModal.style.display = 'none';
+            nameInput.value = '';
+            showScreen('main-menu');
+        }
+
+        function formatTime(totalSeconds) {
+            const hours = Math.floor(totalSeconds / 3600);
+            const minutes = Math.floor((totalSeconds % 3600) / 60);
+            const seconds = Math.floor(totalSeconds % 60);
+
+            const paddedMinutes = String(minutes).padStart(2, '0');
+            const paddedSeconds = String(seconds).padStart(2, '0');
+            
+            if (hours > 0) {
+                return `${hours}:${paddedMinutes}:${paddedSeconds}`;
+            }
+            return `${minutes}:${paddedSeconds}`;
+        }
+
+        function deleteScore(storageKey, index) {
+            if (!confirm('Diesen Eintrag wirklich löschen?')) return;
+            const leaderboard = JSON.parse(localStorage.getItem(storageKey) || '[]');
+            leaderboard.splice(index, 1);
+            localStorage.setItem(storageKey, JSON.stringify(leaderboard));
+            displayLeaderboard(storageKey);
+        }
+
+        function displayLeaderboard(storageKey) {
+            document.querySelectorAll('.leaderboard-nav > button, #leaderboard_multi_nav button').forEach(b => b.classList.remove('active'));
+
+            const mainBtn = document.querySelector(`.leaderboard-nav > button[onclick="displayLeaderboard('${storageKey}')"]`);
+            if (mainBtn) mainBtn.classList.add('active');
+
+            if (storageKey.startsWith('multiplication-')) {
+                document.getElementById('leaderboard-multi-btn').classList.add('active');
+                leaderboardMultiNav.style.display = 'flex';
+                const multiBtn = document.querySelector(`#leaderboard_multi_nav button[onclick="displayLeaderboard('${storageKey}')"]`);
+                if (multiBtn) multiBtn.classList.add('active');
+            } else {
+                leaderboardMultiNav.style.display = 'none';
+            }
+
+            leaderboardList.innerHTML = '';
+            
+            const leaderboard = JSON.parse(localStorage.getItem(storageKey) || '[]');
+            
+            if (leaderboard.length === 0) {
+                leaderboardList.innerHTML = '<li>Noch keine Einträge.</li>';
+                return;
+            }
+            
+            leaderboard.forEach((score, index) => {
+                const li = document.createElement('li');
+                li.innerHTML = `
+                    <span>${index + 1}. ${score.name}</span>
+                    <div class="score-details">
+                        <span>${formatTime(score.time)}</span>
+                        <button class="delete-btn" title="Eintrag löschen" onclick="deleteScore('${storageKey}', ${index})">&#128465;</button>
+                    </div>
+                `;
+                leaderboardList.appendChild(li);
+            });
+        }
+
+        // --- Timer ---
+        function startTimer() {
+            stopTimer();
+            if (!settings.timerActive) return;
+
+            timerBarContainer.style.display = 'block';
+            let timeLeft = settings.timeLimit;
+            
+            timerInterval = setInterval(() => {
+                timeLeft -= 0.1;
+                const percentage = (timeLeft / settings.timeLimit) * 100;
+                timerBar.style.width = `${percentage}%`;
+
+                if (timeLeft <= 0) {
+                    stopTimer();
+                    feedbackEl.innerText = `Zeit um!`;
+                    feedbackEl.style.color = 'var(--primary)';
+                    setTimeout(newProblem, 1200);
+                }
+            }, 100);
+        }
+
+        function stopTimer() {
+            clearInterval(timerInterval);
+            timerBar.style.width = '100%';
+            if (!settings.timerActive) timerBarContainer.style.display = 'none';
+        }
+
+        // --- UI & Settings ---
+        function updateUIVisibility() {
+            answerInputContainer.style.display = (settings.answerMode === 'type') ? 'block' : 'none';
+            mcqContainer.style.display = (settings.answerMode === 'mcq') ? 'grid' : 'none';
+            timeSliderContainer.style.display = settings.timerActive ? 'flex' : 'none';
+            timerBarContainer.style.display = settings.timerActive ? 'block' : 'none';
+        }
+        
+        function loadSettings() {
+            const savedSettings = JSON.parse(localStorage.getItem('mathTrainerSettings'));
+            if (savedSettings) Object.assign(settings, savedSettings);
+
+            const savedDevSettings = JSON.parse(localStorage.getItem('mathTrainerDevSettings'));
+            if(savedDevSettings) Object.assign(devSettings, savedDevSettings);
+
+            // Update UI controls to reflect loaded settings
+            timerToggle.checked = settings.timerActive;
+            timeSlider.value = settings.timeLimit;
+            timeValueDisplay.innerText = `${settings.timeLimit}s`;
+            document.querySelector(`input[name="answer-mode"][value="${settings.answerMode}"]`).checked = true;
+            questionsSlider.value = devSettings.questionsToSolve;
+            questionsValue.innerText = devSettings.questionsToSolve;
+        }
+
+        // --- Event Listeners ---
+        checkBtn.addEventListener('click', () => checkAnswer());
+        answerEl.addEventListener('keyup', (event) => { if (event.key === 'Enter') checkAnswer(); });
+        
+        settingsBtn.addEventListener('click', () => { settingsModal.style.display = 'flex'; });
+        saveSettingsBtn.addEventListener('click', () => { 
+            settings.timerActive = timerToggle.checked;
+            settings.timeLimit = parseInt(timeSlider.value);
+            settings.answerMode = document.querySelector('input[name="answer-mode"]:checked').value;
+            localStorage.setItem('mathTrainerSettings', JSON.stringify(settings));
+            settingsModal.style.display = 'none'; 
+            updateUIVisibility();
+        });
+        
+        devSettingsBtn.addEventListener('click', () => {
+            loginFeedback.innerText = '';
+            devUsernameInput.value = '';
+            devPasswordInput.value = '';
+            loginModal.style.display = 'flex';
+        });
+
+        loginBtn.addEventListener('click', () => {
+            const user = devUsernameInput.value;
+            const pass = devPasswordInput.value;
+            if (user === 'Niklas' && pass === 'dev') {
+                loginModal.style.display = 'none';
+                devSettingsModal.style.display = 'flex';
+            } else {
+                loginFeedback.innerText = 'Benutzername oder Passwort falsch.';
+            }
+        });
+
+        timeSlider.addEventListener('input', (e) => {
+            timeValueDisplay.innerText = `${e.target.value}s`;
+        });
+
+        questionsSlider.addEventListener('input', (e) => {
+            questionsValue.innerText = e.target.value;
+        });
+        questionsSlider.addEventListener('change', (e) => {
+            devSettings.questionsToSolve = parseInt(e.target.value);
+            localStorage.setItem('mathTrainerDevSettings', JSON.stringify(devSettings));
+        });
+
+        godModeToggle.addEventListener('change', (e) => {
+            isGodModeActive = e.target.checked;
+        });
+
+        resetLeaderboardsBtn.addEventListener('click', () => {
+            if(confirm('Warnung: Diese Aktion löscht ALLE gespeicherten Bestenlisten unwiderruflich. Fortfahren?')) {
+                const keysToRemove = [];
+                for(let i=0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    if(key.startsWith('addition') || key.startsWith('subtraction') || key.startsWith('multiplication') || key.startsWith('division')) {
+                        keysToRemove.push(key);
+                    }
+                }
+                keysToRemove.forEach(key => localStorage.removeItem(key));
+                alert('Alle Bestenlisten wurden gelöscht.');
+            }
+        });
+
+        resetSettingsBtn.addEventListener('click', () => {
+            if(confirm('Sollen die Benutzer-Einstellungen (Timer, Antwortmodus) auf den Standard zurückgesetzt werden?')) {
+                localStorage.removeItem('mathTrainerSettings');
+                // Reset settings object and reload UI
+                settings = { timerActive: false, timeLimit: 10, answerMode: 'type' };
+                loadSettings();
+                alert('Einstellungen zurückgesetzt.');
+            }
+        });
+
+        document.querySelectorAll('.leaderboard-toggle-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => { 
+                e.stopPropagation();
+                leaderboardPanel.classList.toggle('show');
+                if (leaderboardPanel.classList.contains('show')) displayLeaderboard('addition');
+            });
+        });
+        
+        document.getElementById('leaderboard-multi-btn').addEventListener('click', (e) => {
+            e.stopPropagation();
+            document.querySelectorAll('.leaderboard-nav > button').forEach(b => b.classList.remove('active'));
+            e.target.classList.add('active');
+            leaderboardMultiNav.style.display = 'flex';
+            leaderboardList.innerHTML = '<li>Wähle eine Malreihe.</li>';
+        });
+
+        saveScoreBtn.addEventListener('click', saveScore);
+
+        // --- Initialisierung ---
+        window.onload = () => {
+            loadSettings();
+            createTableButtons();
+            
+            for (let i = 1; i <= 10; i++) {
+                const btn = document.createElement('button');
+                btn.innerText = `${i}er`;
+                btn.onclick = (e) => {
+                    e.stopPropagation();
+                    document.querySelectorAll('#leaderboard_multi_nav button').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    displayLeaderboard(`multiplication-${i}`);
+                };
+                leaderboardMultiNav.appendChild(btn);
+            }
+            const mixedBtn = document.createElement('button');
+            mixedBtn.innerText = 'Gemischt';
+            mixedBtn.onclick = (e) => {
+                e.stopPropagation();
+                document.querySelectorAll('#leaderboard_multi_nav button').forEach(b => b.classList.remove('active'));
+                mixedBtn.classList.add('active');
+                displayLeaderboard('multiplication-mixed');
+            };
+            leaderboardMultiNav.appendChild(mixedBtn);
+
+            showScreen('main-menu');
+            updateUIVisibility();
+        };
+    </script>
+</body>
+</html>
