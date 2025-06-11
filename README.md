@@ -40,14 +40,6 @@ Richtige Antworten: Der Rahmen leuchtet kurz grün auf.
 
 Falsche Antworten: Der Rahmen leuchtet rot auf und wird leicht geschüttelt, um auf den Fehler aufmerksam zu machen.
 
-5. Versteckte Entwickler-Optionen
-Für fortgeschrittene Anpassungen und zum Testen gibt es ein passwortgeschütztes Entwickler-Menü mit folgenden Optionen:
-
-Ziel-Anzahl anpassen: Die Anzahl der zu lösenden Aufgaben für einen Leaderboard-Eintrag kann angepasst werden.
-
-"Gott-Modus": Ein Testmodus, in dem jede Antwort als richtig gewertet wird.
-
-Zurücksetzen: Funktionen zum Löschen aller Bestenlisten oder zum Zurücksetzen der Benutzereinstellungen auf den Standardwert.
 
 Technologie
 Die Anwendung ist vollständig mit den Kerntechnologien des Webs erstellt:
